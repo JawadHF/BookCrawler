@@ -189,9 +189,9 @@ struct BookController: RouteCollection {
             throw Abort(.badRequest, reason: "Invalid authorId")
         }
         
-        // FIXME: Use non async eventloop
+        // FIXME: Use async eventloop
         //let transaction = try await req.db.transaction
-        let transaction = req.db
+        try await req.db.transaction { transaction in
         
         // MARK: Additional Sibling Properties with eager loading using Swift
         /*
@@ -278,6 +278,7 @@ struct BookController: RouteCollection {
         ///Common code
         book.words = updatedBookWordCount
         try await book.save(on: transaction)
+        }
         return .ok
     }
     
