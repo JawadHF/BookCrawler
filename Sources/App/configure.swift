@@ -1,5 +1,6 @@
 import Fluent
 import FluentPostgresDriver
+import FluentMySQLDriver
 import Vapor
 
 // configures your application
@@ -7,16 +8,57 @@ public func configure(_ app: Application) throws {
     // uncomment to serve files from /Public folder
     // app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
 
-    app.databases.use(.postgres(
+    /**
+     docker run --name postgres
+       -e POSTGRES_DB=vapor_database \
+       -e POSTGRES_USER=vapor_username \
+       -e POSTGRES_PASSWORD=vapor_password \
+       -p 5432:5432 -d postgres
+     */
+    
+    /*
+    let dbConfig = PostgresConfiguration(
+     hostname: Environment.get("DATABASE_HOST") ?? "localhost",
+     port: Environment.get("DATABASE_PORT").flatMap(Int.init(_:)) ?? PostgresConfiguration.ianaPortNumber,
+     username: Environment.get("DATABASE_USERNAME") ?? "vapor_username",
+     password: Environment.get("DATABASE_PASSWORD") ?? "vapor_password",
+     database: Environment.get("DATABASE_NAME") ?? "vapor_database")
+     
+     app.databases.use(.postgres(configuration: dbConfig, maxConnectionsPerEventLoop: 1), as: .psql)
+     */
+    
+    /// docker run --name=mysql-server -e MYSQL_USER=vapor_username -e MYSQL_ROOT_PASSWORD=vapor_password -e MYSQL_DATABASE=vapor_database -e MYSQL_PASSWORD=vapor_password  -p 3307:3306 -d mysql
+    
+    var tls = TLSConfiguration.makeClientConfiguration()
+    tls.certificateVerification = .none
+    
+    let dbConfig = MySQLConfiguration(
         hostname: Environment.get("DATABASE_HOST") ?? "localhost",
-        port: Environment.get("DATABASE_PORT").flatMap(Int.init(_:)) ?? PostgresConfiguration.ianaPortNumber,
+        port: Environment.get("DATABASE_PORT").flatMap(Int.init(_:)) ?? 3307, // MySQLConfiguration.ianaPortNumber,
         username: Environment.get("DATABASE_USERNAME") ?? "vapor_username",
         password: Environment.get("DATABASE_PASSWORD") ?? "vapor_password",
-        database: Environment.get("DATABASE_NAME") ?? "vapor_database"
-    ), as: .psql)
+        database: Environment.get("DATABASE_NAME") ?? "vapor_database",
+        tlsConfiguration: tls)
+    
+    app.databases.use(.mysql(configuration: dbConfig, maxConnectionsPerEventLoop: 1), as: .mysql)
 
-    app.migrations.add(CreateTodo())
+    //Create Tables
+    app.migrations.add(CreateBook())
+    app.migrations.add(CreatePage())
+    app.migrations.add(CreateAuthor())
+    app.migrations.add(CreateBookAuthorPivot())
+    
+    //Create Table Data
+    app.migrations.add(CreateBookData())
+    app.migrations.add(CreatePageData())
+    app.migrations.add(CreateAuthorData())
 
+    //Add logging
+    app.logger.logLevel = .debug
+    
+    //Automatically run migrations and wait for the result
+    try app.autoMigrate().wait()
+    
     // register routes
     try routes(app)
 }
