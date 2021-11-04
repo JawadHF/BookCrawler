@@ -31,19 +31,18 @@ import Vapor
 
 final class Author: Model, Content {
     static let schema = "authors"
-    
+
     @ID(key: .id)
     var id: UUID?
 
     @Field(key: "name")
     var name: String
-    
+
     @Siblings(
       through: BookAuthorPivot.self,
       from: \.$author,
       to: \.$book)
     var books: [Book]
-
 
     init() { }
 
@@ -52,4 +51,3 @@ final class Author: Model, Content {
         self.name = name
     }
 }
-

@@ -30,21 +30,21 @@ import Foundation
 
 final class BookAuthorPivot: Model {
     static let schema = "book-author-pivot"
-    
+
     @ID
     var id: UUID?
-    
+
     @Parent(key: "book_id")
     var book: Book
-    
+
     @Parent(key: "author_id")
     var author: Author
-    
+
     @Field(key: "words")
     var words: Int
-    
+
     init() {}
-    
+
     init(
         id: UUID? = nil,
         book: Book,
@@ -57,4 +57,3 @@ final class BookAuthorPivot: Model {
         self.words = words
     }
 }
-

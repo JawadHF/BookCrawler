@@ -28,7 +28,7 @@
 import Fluent
 
 struct CreateAuthor: AsyncMigration {
-    
+
     func prepare(on database: Database) async throws {
         try await database.schema("authors")
             .id()

@@ -31,35 +31,33 @@ import Vapor
 
 final class Book: Model, Content {
     static let schema = "books"
-    
+
     @ID(key: .id)
     var id: UUID?
 
     @Field(key: "title")
     var title: String
-    
+
     @Field(key: "words")
     var words: Int
-    
+
     @Enum(key: "type")
     var type: BookType
-    
+
     @Field(key: "price")
     var price: Decimal
-    
+
     @OptionalField(key: "discount_price")
     var discountPrice: Decimal?
-    
+
     @Children(for: \.$book)
     var pages: [Page]
 
-    
     @Siblings(
       through: BookAuthorPivot.self,
       from: \.$book,
       to: \.$author)
     var authors: [Author]
-
 
     init() { }
 
@@ -71,7 +69,6 @@ final class Book: Model, Content {
         self.price = price
     }
 }
-
 
 enum BookType: String, Content {
     case fiction

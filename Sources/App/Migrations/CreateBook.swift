@@ -27,19 +27,19 @@
 /// THE SOFTWARE.
 import Fluent
 import FluentSQL
-//import MySQLNIO
+// import MySQLNIO
 import FluentMySQLDriver
 import FluentPostgresDriver
 
 struct CreateBook: AsyncMigration {
-    
+
     func prepare(on database: Database) async throws {
-        
+
         let bookType = try await database.enum("book_type")
             .case("fiction")
             .case("nonFiction")
             .create()
-        
+
         try await database.schema("books")
             .id()
             .field("title", .string, .required)
@@ -47,11 +47,11 @@ struct CreateBook: AsyncMigration {
             .field("type", bookType, .required)
             .field("price", (database is MySQLDatabase) ? .sql(raw: "DECIMAL(7,2)") : .string, .required)
             .field("discount_price", (database is MySQLDatabase) ? .sql(raw: "DECIMAL(7,2)") : .string)
-            //.field("price", database is PostgresDatabase ? .sql(raw: "MONEY") : .string, .required)
-            //.field("price", .sql(raw: "DECIMAL(7,2)"), .required)
+            // .field("price", database is PostgresDatabase ? .sql(raw: "MONEY") : .string, .required)
+            // .field("price", .sql(raw: "DECIMAL(7,2)"), .required)
             .unique(on: "title")
             .create()
-        
+
         /*
         let builder = database.schema("books")
             .id()
@@ -80,4 +80,3 @@ struct CreateBook: AsyncMigration {
         try await database.schema("books").delete()
     }
 }
-

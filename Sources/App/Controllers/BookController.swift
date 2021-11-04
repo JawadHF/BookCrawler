@@ -42,41 +42,41 @@ struct BookController: RouteCollection {
         books.group(":bookId") { book in
             book.delete(use: delete)
         }
-        
+
         books.get("samples", use: getSamplePages)
         books.post(":bookId", "authors", ":authorId", use: authorContribution)
     }
-    
+
     func index(req: Request) async throws -> [Book] {
         try await Book.query(on: req.db).all()
     }
-    
+
     /// Reducing memory and network bandwidth
     func titles(req: Request) async throws -> [String] {
         let books = try await Book.query(on: req.db)
             .field(\.$title)    // MARK: Reduce data fetched to save on memory and bandwidth usage
             .sort(\.$title)
             .all()
-        
-        let bookTitles = books.map { $0.title } //Attempting to fetch any other properties will result in an error
+
+        let bookTitles = books.map { $0.title } // Attempting to fetch any other properties will result in an error
         return bookTitles
     }
-    
+
     /// Preferring DB calculations
     func count(req: Request) async throws -> Int {
-        //try await Book.query(on: req.db).all().count
-        
-        //  MARK: Save on Memory, Network and improve performance
+        // try await Book.query(on: req.db).all().count
+
+        // MARK: Save on Memory, Network and improve performance
         try await Book.query(on: req.db).count()
     }
-    
+
     /// Discount all fiction books to $10
     func applyDiscount(req: Request) async throws -> HTTPStatus {
-        
+
         guard let discountPrice = req.query[Decimal.self, at: "price"], discountPrice > 0 else {
             throw Abort(.badRequest, reason: "Invalid discount price")
         }
-        
+
         /*
          // Fetch books from DB
         let booksToBeDiscounted = try await Book.query(on: req.db)
@@ -90,19 +90,17 @@ struct BookController: RouteCollection {
             try await book.update(on: req.db)
         }
          */
-        
-        //  MARK: Perform read and update on the DB and save on Memory + Network and improve performance
+
+        // MARK: Perform read and update on the DB and save on Memory + Network and improve performance
         try await Book.query(on: req.db)
             .set(\.$discountPrice, to: discountPrice)
             .filter(\.$type == .fiction)
             .filter(\.$price > discountPrice)
             .update()
-        
+
         return .ok
     }
-    
-    
-    
+
     /// Returning better error messages by handling expected errors
     func create(req: Request) async throws -> Book {
         let book = try req.content.decode(Book.self)
@@ -114,16 +112,16 @@ struct BookController: RouteCollection {
         }
         return book
     }
-    
+
     func get(_ req: Request) async throws -> Book {
         guard let book = try await Book.find(req.parameters.get("bookId"), on: req.db) else {
             throw Abort(.notFound)
         }
         return book
     }
-    
+
     func delete(req: Request) async throws -> HTTPStatus {
-        
+
         guard let bookID = req.parameters.get("bookId", as: UUID.self) else {
             throw Abort(.badRequest, reason: "Invalid bookId")
         }
@@ -131,17 +129,17 @@ struct BookController: RouteCollection {
             throw Abort(.notFound)
         }
         try await book.delete(on: req.db)
-        
+
         return .noContent
     }
-    
+
     /// Using Database Joins to improve performance
     func getSamplePages(_ req: Request) async throws -> [BookWithPages] {
 
         guard let selectedPrice = req.query[Decimal.self, at: "price"] else {
             throw Abort(.badRequest, reason: "Invalid price")
         }
-        
+
         var bookWithPages: [BookWithPages] = []
 
         // MARK: N+1 Select issue
@@ -160,7 +158,7 @@ struct BookController: RouteCollection {
             }
         }
          */
-         
+
         // MARK: Avoiding N+1 selects using eager loading
         /*
         let books = try await Book.query(on: req.db)
@@ -176,30 +174,30 @@ struct BookController: RouteCollection {
              }
          }
          */
-        
+
         // MARK: Avoiding N+1 selects using joins
-        
+
         let pages = try await Page.query(on: req.db)
             .filter(\.$isSample == true )
             .join(Book.self, on: \Page.$book.$id == \Book.$id)
             .filter(Book.self, \.$price < selectedPrice)
             .all()
-        
+
         let groupByBook = try Dictionary(grouping: pages) { page -> String in
             let book = try page.joined(Book.self)
             return book.$title.wrappedValue
         }
-        
+
         for book in groupByBook {
             bookWithPages.append(BookWithPages(title: book.key, pages: book.value))
         }
-        
+
         return bookWithPages
     }
-    
+
     /// Siblings with additional property
     func authorContribution(req: Request) async throws -> HTTPStatus {
-        
+
         guard let totalWordContribution = req.query[Int.self, at: "words"] else {
             throw Abort(.badRequest, reason: "Invalid word contribution number")
         }
@@ -209,11 +207,11 @@ struct BookController: RouteCollection {
         guard let authorId = req.parameters.get("authorId", as: UUID.self) else {
             throw Abort(.badRequest, reason: "Invalid authorId")
         }
-        
+
         // FIXME: Use async eventloop
-        //let transaction = try await req.db.transaction
+        // let transaction = try await req.db.transaction
         try await req.db.transaction { transaction in
-        
+
         // MARK: Additional Sibling Properties with eager loading using Swift
         /*
         guard let book = try await Book.query(on: transaction)
@@ -255,21 +253,21 @@ struct BookController: RouteCollection {
             }
         let updatedBookWordCount = bookAuthorWords.reduce(0, +)
         */
-        
+
         // MARK: Additional Sibling Properties Using Database
          guard let book = try await Book.query(on: transaction)
                  .filter(\.$id == bookId)
                  .first() else {
                      throw Abort(.notFound, reason: "Book with Id was not found")
                  }
-         
+
          guard let author = try await Author.find(authorId, on: transaction) else {
              throw Abort(.notFound, reason: "Author with Id was not found")
          }
-         
-        //Check if author already exists in the pivot and update existing word count if it exists else create it
+
+        // Check if author already exists in the pivot and update existing word count if it exists else create it
         let isAlreadyAuthor = try await book.$authors.isAttached(to: author, on: transaction)
-        
+
         if isAlreadyAuthor {
             guard let bookAuthorPivot = try await BookAuthorPivot.query(on: transaction)
                     .filter(\.$book.$id == bookId)
@@ -280,36 +278,31 @@ struct BookController: RouteCollection {
             /// add additional requested quantity if it already exists instead of updating with new value
             bookAuthorPivot.words = totalWordContribution
             try await bookAuthorPivot.save(on: transaction)
-        }
-        else {
+        } else {
             try await book.$authors.attach(author, method: .ifNotExists, on: transaction) { pivot in
                 pivot.words = totalWordContribution
             }
         }
-        
-        ///Get updated count
-        //Does not work on PostgreSQL due to result returning Double instead of Int causing a conversion error: https://github.com/vapor/fluent-kit/issues/379
+
+        /// Get updated count
+        // Does not work on PostgreSQL due to result returning Double instead of Int causing a conversion error: https://github.com/vapor/fluent-kit/issues/379
         // FIXME: Replace aggregate
         guard let updatedBookWordCount = try await BookAuthorPivot.query(on: transaction)
                 .filter(\.$book.$id == bookId)
                 .sum(\.$words) else {
                     throw Abort(.notFound, reason: "Unable to retreive updated word count")
                 }
-        
-        ///Common code
+
+        /// Common code
         book.words = updatedBookWordCount
         try await book.save(on: transaction)
         }
         return .ok
     }
-    
-    
+
     struct BookWithPages: Content {
       let title: String
       let pages: [Page]
     }
 
 }
-
-
-

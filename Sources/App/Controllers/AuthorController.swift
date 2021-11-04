@@ -53,7 +53,7 @@ struct AuthorController: RouteCollection {
         }
         return author
     }
-    
+
     func get(_ req: Request) async throws -> Author {
         guard let author = try await Author.find(req.parameters.get("authorId"), on: req.db) else {
             throw Abort(.notFound)
@@ -62,19 +62,17 @@ struct AuthorController: RouteCollection {
     }
 
     func delete(req: Request) async throws -> HTTPStatus {
-        
+
         guard let authorID = req.parameters.get("authorId", as: UUID.self) else {
             throw Abort(.badRequest, reason: "Invalid authorId")
         }
-        
+
         guard let author = try await Author.find( authorID, on: req.db) else {
             throw Abort(.notFound)
         }
-        
+
         try await author.delete(on: req.db)
-            
+
         return .noContent
     }
 }
-
-

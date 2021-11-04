@@ -29,7 +29,7 @@
 import Fluent
 
 struct CreatePage: AsyncMigration {
-    
+
     func prepare(on database: Database) async throws {
         try await database.schema("pages")
             .id()
@@ -48,5 +48,3 @@ struct CreatePage: AsyncMigration {
         try await database.schema("pages").delete()
     }
 }
-
-

@@ -28,12 +28,11 @@
 
 import Fluent
 import Vapor
-//For Raw SQL
+// For Raw SQL
 import SQLKit
 import FluentSQL
-//import MySQLNIO
+// import MySQLNIO
 import FluentMySQLDriver
-
 
 struct PageController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
@@ -60,7 +59,7 @@ struct PageController: RouteCollection {
         }
         return page
     }
-    
+
     func get(_ req: Request) async throws -> Page {
         guard let page = try await Page.find(req.parameters.get("pageId"), on: req.db) else {
             throw Abort(.notFound)
@@ -69,7 +68,7 @@ struct PageController: RouteCollection {
     }
 
     func delete(req: Request) async throws -> HTTPStatus {
-        
+
         guard let pageID = req.parameters.get("pageId", as: UUID.self) else {
             throw Abort(.badRequest, reason: "Invalid pageId")
         }
@@ -79,57 +78,41 @@ struct PageController: RouteCollection {
         try await page.delete(on: req.db)
         return .noContent
     }
-    
-    
+
     func search(req: Request) async throws -> [Page] {
-        
+
         guard let searchTerm = req.query[String.self, at: "term"] else {
            throw Abort(.badRequest, reason: "invalid search query")
          }
-        
-        
-        /*
-        let matchingPages = try await Page.query(on: req.db)
-           .filter(\.$content ~~ searchTerm)    //Uses LIKE %searchTerm% . Is a case insensitive search with MySQL
-           .all()
-         */
-        
-        /*
-        let query = Planet.query(on: req.db)
-        if req.db is SQLDatabase {
-            // The underlying database driver is SQL.
-            query.filter(.sql(raw: "LOWER(name) = 'earth'"))
-        } else {
-            // The underlying database driver is _not_ SQL.
-        }*/
-        
+
+
+
         /*
         let q = "%\(searchTerm)%"
         let sqlString: SQLQueryString = #"concat(contacts.firstName, " ", contacts.lastName) LIKE \#(bind: q)"#
         group.filter(.sql(sqlString))
          */
-        
+
         guard let sqldb = req.db as? SQLDatabase else {
           throw Abort(.internalServerError)
         }
-        
+
         // MARK: Avoid Raw SQL susceptible to SQL Injection
-        //let dbQuery = sqldb.raw("SELECT * FROM pages where content LIKE '%\(searchTerm)%'")
-        
+        // let query = sqldb.raw("SELECT * FROM pages where content LIKE '%\(searchTerm)%'")
+
         // MARK: Use Parameterized Queries for custom SQL to safeguard against SQL Injection
         let table = "pages"
         let searchExpression = "%\(searchTerm)%"
         let query = sqldb.raw("SELECT * FROM \(raw: table) WHERE content LIKE \(bind: searchExpression)")
+
         let matchingPages = try await query.all(decoding: Page.self).get()
-        
+
         /*
         let query = SQLRaw("select * from pages where content LIKE ")
         SQLBind(searchTerm)
         SQLBind("%" + searchTerm.description + "%") //SQLRaw("\"%" + string.description + "%\"")
          */
-        
-       
-        
+
         /*
         guard let sqldb = req.db as? MySQLDatabase else {
           throw Abort(.internalServerError)
@@ -140,11 +123,24 @@ struct PageController: RouteCollection {
         let matchingPages = try await query.filter(.sql(raw: "content LIKE '%\(searchTerm)%'")).all()
         //}
          */
-        
+
+        // MARK: Use the SQL Builder whenever possible
+
+        /*
+        let matchingPages = try await Page.query(on: req.db)
+           .filter(\.$content ~~ searchTerm)    //Uses LIKE %searchTerm% . Is a case insensitive search with MySQL
+           .all()
+         */
+
+        /*
+        let query = Planet.query(on: req.db)
+        if req.db is SQLDatabase {
+            // The underlying database driver is SQL.
+            query.filter(.sql(raw: "LOWER(name) = 'earth'"))
+        } else {
+            // The underlying database driver is _not_ SQL.
+        }*/
+
         return matchingPages
     }
 }
-
-
-
-

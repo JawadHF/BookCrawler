@@ -29,7 +29,7 @@
 import Fluent
 
 struct CreateBookAuthorPivot: AsyncMigration {
-    
+
   func prepare(on database: Database) async throws {
     try await database.schema("book-author-pivot")
       .id()
@@ -40,9 +40,8 @@ struct CreateBookAuthorPivot: AsyncMigration {
       .field("words", .int, .required)
       .create()
   }
-  
+
   func revert(on database: Database) async throws {
     try await database.schema("book-author-pivot").delete()
   }
 }
-

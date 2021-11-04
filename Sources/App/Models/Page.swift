@@ -30,29 +30,27 @@ import Vapor
 
 final class Page: Model, Content {
     static let schema = "pages"
-    
+
     @ID(key: .id)
     var id: UUID?
-    
+
     @Field(key: "number")
     var number: Int
-    
+
     @Field(key: "chapter")
     var chapter: String
-    
+
     @OptionalField(key: "section")
     var section: String?
-    
+
     @Field(key: "content")
     var content: String
-    
+
     @Field(key: "is_sample")
     var isSample: Bool
-    
+
     @Parent(key: "bookId")
     var book: Book
-
-
 
     init() { }
 
@@ -66,4 +64,3 @@ final class Page: Model, Content {
         self.$book.id = bookId
     }
 }
-
