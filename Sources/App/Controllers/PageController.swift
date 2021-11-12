@@ -44,6 +44,8 @@ struct PageController: RouteCollection {
             page.delete(use: delete)
         }
         pages.get("search", use: search)
+        pages.get("searchBook", use: searchBook)
+        pages.get("searchBookTitles", use: searchBookTitles)
     }
 
     func index(req: Request) async throws -> [Page] {
@@ -55,8 +57,16 @@ struct PageController: RouteCollection {
         do {
             try await page.create(on: req.db)
         } catch let error as DatabaseError where error.isConstraintFailure {
-            throw Abort(.forbidden, reason: "An page with that number already exists or the associated key referenced is incorrect")
-        }
+            throw Abort(.forbidden, reason: "Constraint fail: A book page with that number already exists or the associated key referenced is incorrect")
+            } /*catch MySQLError.isConstraintFailure {
+             throw Abort(.forbidden, reason: "Constraint fail: A book page with that number already exists or the associated key referenced is incorrect")
+        } catch MySQLError.duplicateEntry(let errorResponse) {
+            throw Abort(.forbidden, reason: errorResponse)
+        } catch MySQLError. {
+            throw Abort(.forbidden, reason: errorResponse)
+        } catch {
+            throw Abort(.forbidden, reason: "A book page with that number already exists or the associated key referenced is incorrect")
+        }*/
         return page
     }
 
@@ -84,8 +94,6 @@ struct PageController: RouteCollection {
         guard let searchTerm = req.query[String.self, at: "term"] else {
            throw Abort(.badRequest, reason: "invalid search query")
          }
-
-
 
         /*
         let q = "%\(searchTerm)%"
@@ -143,4 +151,51 @@ struct PageController: RouteCollection {
 
         return matchingPages
     }
+
+    func searchBook (req: Request) async throws -> [PageWithBook] {
+
+        guard let searchTerm = req.query[String.self, at: "term"] else {
+           throw Abort(.badRequest, reason: "invalid search query")
+         }
+
+        let matchingPages = try await Page.query(on: req.db)
+            .with(\.$book)
+           .filter(\.$content ~~ searchTerm)    //Uses LIKE %searchTerm% . Is a case insensitive search with MySQL
+           .all()
+
+        var pagesWithBook: [PageWithBook] = []
+
+        for pageWithBook in matchingPages {
+            pagesWithBook.append(PageWithBook(title: pageWithBook.book.title, page: pageWithBook))
+        }
+
+        return pagesWithBook
+    }
+
+
+    func searchBookTitles (req: Request) async throws -> [String] {
+
+        guard let searchTerm = req.query[String.self, at: "term"] else {
+           throw Abort(.badRequest, reason: "invalid search query")
+         }
+
+        let matchingPages = try await Page.query(on: req.db)
+            .with(\.$book)
+           .filter(\.$content ~~ searchTerm)    //Uses LIKE %searchTerm% . Is a case insensitive search with MySQL
+           .all()
+
+        var titles: [String] = []
+
+        for pageWithBook in matchingPages {
+            titles.append(pageWithBook.book.title)
+        }
+
+        return titles
+    }
 }
+
+struct PageWithBook: Content {
+  let title: String
+  let page: Page
+}
+

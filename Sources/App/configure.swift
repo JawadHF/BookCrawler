@@ -56,8 +56,40 @@ public func configure(_ app: Application) throws {
 
     /// docker run --name=mysql-server -e MYSQL_USER=vapor_username -e MYSQL_ROOT_PASSWORD=vapor_password -e MYSQL_DATABASE=vapor_database -e MYSQL_PASSWORD=vapor_password  -p 3307:3306 -d mysql
 
+    /*
+    let tlsConfiguration = TLSConfiguration.forClient(minimumTLSVersion: .tlsv11, trustRoots:  .file("path to the ca file, which can be found at https://s3.amazonaws.com/rds-downloads/rds-combined-ca-bundle.pem "))
+        let mysqlConfig = try MySQLDatabaseConfig(url: "url to the database", capabilities: .default, characterSet: .utf8mb4_unicode_ci, transport: .customTLS(tlsConfiguration))!
+        let mysql = MySQLDatabase(config: mysqlConfig)
+     */
+
+    /*
+    extension Application {
+        static let dbHost = Environment.get("DB_HOST")!
+        static let dbUser = Environment.get("DB_USER")!
+        static let dbPass = Environment.get("DB_PASS")!
+        static let dbName = Environment.get("DB_NAME")!
+        static let dbPort = Int(Environment.get("DB_PORT")!)!
+        static let dbCert = Environment.get("DB_CERT")
+        static let domainUrl = Environment.get("DOMAIN_URL")!
+    }
+
+    var tlsConfiguration: TLSConfiguration?
+    if let dbCert = Application.dbCert, app.environment == .production {
+        tlsConfiguration = try TLSConfiguration.forClient(trustRoots: .certificates([NIOSSLCertificate(bytes: Array(dbCert.utf8), format: .pem)]))
+    }
+
+    let config = PostgresConfiguration(hostname: Application.dbHost, port: Application.dbPort, username: Application.dbUser, password: Application.dbPass, database: Application.dbName, tlsConfiguration: tlsConfiguration) app.databases.use(.postgres(configuration: config, maxConnectionsPerEventLoop: 2), as: .psql)
+     */
+
+    
     var tls = TLSConfiguration.makeClientConfiguration()
     tls.certificateVerification = .none
+
+    /*
+    tls.certificateVerification = .fullVerification
+    tls.minimumTLSVersion = .tlsv13
+    tls.trustRoots = .file("/path/to/CA_cert_pem_crt_file")
+     */
 
     let dbConfig = MySQLConfiguration(
         hostname: Environment.get("DATABASE_HOST") ?? "localhost",
@@ -67,7 +99,7 @@ public func configure(_ app: Application) throws {
         database: Environment.get("DATABASE_NAME") ?? "vapor_database",
         tlsConfiguration: tls)
 
-    app.databases.use(.mysql(configuration: dbConfig, maxConnectionsPerEventLoop: 1), as: .mysql)
+    app.databases.use(.mysql(configuration: dbConfig, maxConnectionsPerEventLoop: 2), as: .mysql)
 
     // Create Tables
     app.migrations.add(CreateBook())

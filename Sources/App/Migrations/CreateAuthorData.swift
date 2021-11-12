@@ -32,16 +32,11 @@ struct CreateAuthorData: AsyncMigration {
 
     func prepare(on database: Database) async throws {
 
-        /*guard let user =  try await User.query(on: database)
-            .filter(\.$name == "Admin")
-            .first() else { throw Abort(.notFound) }*/
-
         let authors: [Author] = [
             .init(name: "Tim"),
             .init(name: "Tanner"),
             .init(name: "Jonas"),
             .init(name: "Logan"),
-           // .init(name: "Jockey", address: "123", city: .bengaluru, userId: user.id!),
             .init(name: "Mark")
         ]
 

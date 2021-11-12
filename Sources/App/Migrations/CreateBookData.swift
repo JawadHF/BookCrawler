@@ -32,10 +32,6 @@ struct CreateBookData: AsyncMigration {
 
     func prepare(on database: Database) async throws {
 
-        /*guard let user =  try await User.query(on: database)
-            .filter(\.$name == "Admin")
-            .first() else { throw Abort(.notFound) }*/
-
         let books: [Book] = [
             .init(title: "Server-side Swift with Vapor", words: 100, type: .nonFiction, price: 59.99),
             .init(title: "Getting started with Vapor", words: 100, type: .nonFiction, price: 0),

@@ -58,7 +58,9 @@ struct BookController: RouteCollection {
             .sort(\.$title)
             .all()
 
-        let bookTitles = books.map { $0.title } // Attempting to fetch any other properties will result in an error
+        // Attempting to fetch any other properties will result in an error
+        let bookTitles = books.map(\.title) // Map using keypath is same as books.map{ $0.title }
+
         return bookTitles
     }
 
@@ -73,7 +75,7 @@ struct BookController: RouteCollection {
     /// Discount all fiction books to $10
     func applyDiscount(req: Request) async throws -> HTTPStatus {
 
-        guard let discountPrice = req.query[Decimal.self, at: "price"], discountPrice > 0 else {
+        guard let discountedPrice = req.query[Decimal.self, at: "price"], discountedPrice > 0 else {
             throw Abort(.badRequest, reason: "Invalid discount price")
         }
 
@@ -81,21 +83,21 @@ struct BookController: RouteCollection {
          // Fetch books from DB
         let booksToBeDiscounted = try await Book.query(on: req.db)
             .filter(\.$type == .fiction)
-            .filter(\.$price > discountPrice)
+            .filter(\.$price > discountedPrice)
             .all()
         
          // Update each matching book with discounted price
         for book in booksToBeDiscounted {
-            book.discountPrice = discountPrice
+            book.discountPrice = discountedPrice
             try await book.update(on: req.db)
         }
          */
 
         // MARK: Perform read and update on the DB and save on Memory + Network and improve performance
         try await Book.query(on: req.db)
-            .set(\.$discountPrice, to: discountPrice)
+            .set(\.$discountPrice, to: discountedPrice)
             .filter(\.$type == .fiction)
-            .filter(\.$price > discountPrice)
+            .filter(\.$price > discountedPrice)
             .update()
 
         return .ok
@@ -108,7 +110,7 @@ struct BookController: RouteCollection {
             try await book.create(on: req.db)
             // MARK: Handling DB Errors
         } catch let error as DatabaseError where error.isConstraintFailure {
-            throw Abort(.forbidden, reason: "A book with that name already exists or the associated key referenced is incorrect")
+            throw Abort(.forbidden, reason: "A book with that title already exists")
         }
         return book
     }
@@ -152,7 +154,7 @@ struct BookController: RouteCollection {
             let pages = try await book.$pages.get(on: req.db)
                //.filter(\Page.$isSample)
                 //.all()
-            let samplePages = pages.filter{$0.isSample}
+            let samplePages = pages.filter(\.isSample) //or pages.filter{ $0.isSample }
             if !samplePages.isEmpty {
                 bookWithPages.append(BookWithPages(title: book.title, pages: samplePages))
             }
@@ -168,7 +170,7 @@ struct BookController: RouteCollection {
             .all()
          
          for book in books {
-             let samplePages = book.pages.filter{$0.isSample}
+             let samplePages = book.pages.filter(\.isSample) // or book.pages.filter{ $0.isSample }
              if !samplePages.isEmpty {
                  bookWithPages.append(BookWithPages(title: book.title, pages: samplePages))
              }
@@ -185,7 +187,7 @@ struct BookController: RouteCollection {
 
         let groupByBook = try Dictionary(grouping: pages) { page -> String in
             let book = try page.joined(Book.self)
-            return book.$title.wrappedValue
+            return book.title
         }
 
         for book in groupByBook {
@@ -212,6 +214,13 @@ struct BookController: RouteCollection {
         // let transaction = try await req.db.transaction
         try await req.db.transaction { transaction in
 
+            //Execute concurrently in parallel
+            async let authorQuery = Author.find(authorId, on: transaction)
+
+            guard let author = try await authorQuery else {
+                throw Abort(.notFound, reason: "Author with Id was not found")
+            }
+
         // MARK: Additional Sibling Properties with eager loading using Swift
         /*
         guard let book = try await Book.query(on: transaction)
@@ -221,11 +230,7 @@ struct BookController: RouteCollection {
                 .first() else {
                     throw Abort(.notFound, reason: "Book with Id was not found")
                 }
-        
-        guard let author = try await Author.find(authorId, on: transaction) else {
-            throw Abort(.notFound, reason: "Author with Id was not found")
-        }
-        
+
         var bookAuthors = book.$authors.pivots
         var isNewAuthor = true
         
@@ -245,7 +250,7 @@ struct BookController: RouteCollection {
         
         /*
          Use expanded version below
-         let updatedBookWordCount = bookAuthors.map({$0.words}).reduce(0, +)
+         let updatedBookWordCount = bookAuthors.map(\.words).reduce(0, +) // bookAuthors.map({$0.words}).reduce(0, +)
          */
          let bookAuthorWords = book.$authors.pivots
             .map { bookAuthor in
@@ -255,15 +260,9 @@ struct BookController: RouteCollection {
         */
 
         // MARK: Additional Sibling Properties Using Database
-         guard let book = try await Book.query(on: transaction)
-                 .filter(\.$id == bookId)
-                 .first() else {
-                     throw Abort(.notFound, reason: "Book with Id was not found")
-                 }
-
-         guard let author = try await Author.find(authorId, on: transaction) else {
-             throw Abort(.notFound, reason: "Author with Id was not found")
-         }
+            guard let book = try await Book.find(bookId, on: transaction) else {
+                throw Abort(.notFound, reason: "Book with Id was not found")
+            }
 
         // Check if author already exists in the pivot and update existing word count if it exists else create it
         let isAlreadyAuthor = try await book.$authors.isAttached(to: author, on: transaction)
@@ -290,7 +289,7 @@ struct BookController: RouteCollection {
         guard let updatedBookWordCount = try await BookAuthorPivot.query(on: transaction)
                 .filter(\.$book.$id == bookId)
                 .sum(\.$words) else {
-                    throw Abort(.notFound, reason: "Unable to retreive updated word count")
+                    throw Abort(.notFound, reason: "Unable to retrieve updated word count")
                 }
 
         /// Common code
@@ -300,9 +299,9 @@ struct BookController: RouteCollection {
         return .ok
     }
 
-    struct BookWithPages: Content {
-      let title: String
-      let pages: [Page]
-    }
+}
 
+struct BookWithPages: Content {
+  let title: String
+  let pages: [Page]
 }

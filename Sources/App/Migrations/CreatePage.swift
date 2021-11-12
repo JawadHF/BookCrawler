@@ -27,6 +27,7 @@
 /// THE SOFTWARE.
 
 import Fluent
+import FluentMySQLDriver
 
 struct CreatePage: AsyncMigration {
 
@@ -36,11 +37,11 @@ struct CreatePage: AsyncMigration {
             .field("number", .int, .required)
             .field("chapter", .string, .required)
             .field("section", .string)
-            .field("content", .string, .required)
+            .field("content", (database is MySQLDatabase) ? .sql(raw: "TEXT") : .string, .required)
             .field("is_sample", .bool, .required)
             .field("bookId", .uuid, .required, .references("books", "id"))
-            .unique(on: "number")
-            .unique(on: "chapter", "section")
+            .unique(on: "number", "bookId")
+            .unique(on: "number", "chapter", "section")
             .create()
     }
 
