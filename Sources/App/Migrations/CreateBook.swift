@@ -40,11 +40,17 @@ struct CreateBook: AsyncMigration {
             .case("nonFiction")
             .create()
 
+        let bookForm = try await database.enum("book_form")
+            .case("shortStory")
+            .case("novel")
+            .create()
+
         try await database.schema("books")
             .id()
             .field("title", .string, .required)
             .field("words", .int, .required)
             .field("type", bookType, .required)
+            .field("form", bookForm, .required)
             .field("price", (database is MySQLDatabase) ? .sql(raw: "DECIMAL(7,2)") : .string, .required)
             .field("discount_price", (database is MySQLDatabase) ? .sql(raw: "DECIMAL(7,2)") : .string)
             // .field("price", database is PostgresDatabase ? .sql(raw: "MONEY") : .string, .required)

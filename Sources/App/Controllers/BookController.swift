@@ -28,7 +28,6 @@
 
 import Fluent
 import Vapor
-import Foundation
 
 struct BookController: RouteCollection {
     func boot(routes: RoutesBuilder) throws {
@@ -292,9 +291,14 @@ struct BookController: RouteCollection {
                     throw Abort(.notFound, reason: "Unable to retrieve updated word count")
                 }
 
-        /// Common code
-        book.words = updatedBookWordCount
-        try await book.save(on: transaction)
+            /// Common code
+            if let bookForm = book.form, bookForm == .shortStory {
+                if updatedBookWordCount > 7500 {
+                    throw Abort(.forbidden, reason: "Short story cannot exceed 7500 words")
+                }
+            }
+            book.words = updatedBookWordCount
+            try await book.save(on: transaction)
         }
         return .ok
     }

@@ -44,13 +44,16 @@ final class Book: Model, Content {
     @Enum(key: "type")
     var type: BookType
 
+    @OptionalEnum(key: "form")
+    var form: BookForm?
+
     @Field(key: "price")
     var price: Decimal
 
     @OptionalField(key: "discount_price")
     var discountPrice: Decimal?
 
-    @Children(for: \.$book)
+    @Children(for: \Page.$book)
     var pages: [Page]
 
     @Siblings(
@@ -61,11 +64,12 @@ final class Book: Model, Content {
 
     init() { }
 
-    init(id: UUID? = nil, title: String, words: Int, type: BookType = .nonFiction, price: Decimal) {
+    init(id: UUID? = nil, title: String, words: Int, type: BookType = .nonFiction, form: BookForm?, price: Decimal) {
         self.id = id
         self.title = title
         self.words = words
         self.type = type
+        self.form = form
         self.price = price
     }
 }
@@ -73,4 +77,9 @@ final class Book: Model, Content {
 enum BookType: String, Content {
     case fiction
     case nonFiction
+}
+
+enum BookForm: String, Content {
+    case shortStory
+    case novel
 }
