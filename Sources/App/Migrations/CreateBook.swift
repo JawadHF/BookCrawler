@@ -50,7 +50,7 @@ struct CreateBook: AsyncMigration {
             .field("title", .string, .required)
             .field("words", .int, .required)
             .field("type", bookType, .required)
-            .field("form", bookForm, .required)
+            .field("form", bookForm)
             .field("price", (database is MySQLDatabase) ? .sql(raw: "DECIMAL(7,2)") : .string, .required)
             .field("discount_price", (database is MySQLDatabase) ? .sql(raw: "DECIMAL(7,2)") : .string)
             // .field("price", database is PostgresDatabase ? .sql(raw: "MONEY") : .string, .required)

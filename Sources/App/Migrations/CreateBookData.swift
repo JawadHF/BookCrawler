@@ -44,7 +44,7 @@ struct CreateBookData: AsyncMigration {
             .init(title: "Gulliver's Travels", words: 100, type: .fiction, form: .novel, price: 99.99),
             .init(title: "David Copperfield", words: 100, type: .fiction, form: .novel, price: 99.99),
             .init(title: "The Necklace", words: 1134, type: .fiction, form: .shortStory, price: 99.99),
-            .init(title: "The Man Who Knew Too Much", words: 100, type: .fiction, form: .shortStory, price: 99.99),
+            //.init(title: "The Man Who Knew Too Much", words: 100, type: .fiction, form: .shortStory, price: 99.99),
             .init(title: "Just Lather, That's All", words: 1181, type: .fiction, form: .shortStory, price: 99.99),
 
         ]

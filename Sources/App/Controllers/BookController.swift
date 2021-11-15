@@ -216,10 +216,6 @@ struct BookController: RouteCollection {
             //Execute concurrently in parallel
             async let authorQuery = Author.find(authorId, on: transaction)
 
-            guard let author = try await authorQuery else {
-                throw Abort(.notFound, reason: "Author with Id was not found")
-            }
-
         // MARK: Additional Sibling Properties with eager loading using Swift
         /*
         guard let book = try await Book.query(on: transaction)
@@ -231,6 +227,12 @@ struct BookController: RouteCollection {
                 }
 
         var bookAuthors = book.$authors.pivots
+
+         guard let author = try await authorQuery else {
+            throw Abort(.notFound, reason: "Author with Id was not found")
+         }
+
+
         var isNewAuthor = true
         
         for bookAuthor in bookAuthors {
@@ -263,10 +265,23 @@ struct BookController: RouteCollection {
                 throw Abort(.notFound, reason: "Book with Id was not found")
             }
 
+            guard let author = try await authorQuery else {
+                throw Abort(.notFound, reason: "Author with Id was not found")
+            }
+
+
         // Check if author already exists in the pivot and update existing word count if it exists else create it
         let isAlreadyAuthor = try await book.$authors.isAttached(to: author, on: transaction)
 
         if isAlreadyAuthor {
+
+            try await BookAuthorPivot.query(on: transaction)
+                        .set(\.$words, to: totalWordContribution)
+                        .filter(\.$book.$id == bookId)
+                        .filter(\.$author.$id == authorId)
+                        .update()
+
+            /*
             guard let bookAuthorPivot = try await BookAuthorPivot.query(on: transaction)
                     .filter(\.$book.$id == bookId)
                     .filter(\.$author.$id == authorId)
@@ -276,6 +291,7 @@ struct BookController: RouteCollection {
             /// add additional requested quantity if it already exists instead of updating with new value
             bookAuthorPivot.words = totalWordContribution
             try await bookAuthorPivot.save(on: transaction)
+             */
         } else {
             try await book.$authors.attach(author, method: .ifNotExists, on: transaction) { pivot in
                 pivot.words = totalWordContribution

@@ -40,8 +40,8 @@ final class Author: Model, Content {
 
     @Siblings(
       through: BookAuthorPivot.self,
-      from: \.$author,
-      to: \.$book)
+      from: \BookAuthorPivot.$author,
+      to: \BookAuthorPivot.$book)
     var books: [Book]
 
     init() { }

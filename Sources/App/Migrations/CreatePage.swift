@@ -41,7 +41,6 @@ struct CreatePage: AsyncMigration {
             .field("is_sample", .bool, .required)
             .field("bookId", .uuid, .required, .references("books", "id"))
             .unique(on: "number", "bookId")
-            .unique(on: "number", "chapter", "section")
             .create()
     }
 
