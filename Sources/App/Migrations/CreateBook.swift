@@ -26,10 +26,10 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 import Fluent
-import FluentSQL
+//import FluentSQL
 // import MySQLNIO
 import FluentMySQLDriver
-import FluentPostgresDriver
+//import FluentPostgresDriver
 
 struct CreateBook: AsyncMigration {
 

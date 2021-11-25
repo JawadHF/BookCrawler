@@ -217,7 +217,6 @@ struct BookController: RouteCollection {
             async let authorQuery = Author.find(authorId, on: transaction)
 
         // MARK: Additional Sibling Properties with eager loading using Swift
-        /*
         guard let book = try await Book.query(on: transaction)
                 .filter(\.$id == bookId)
                 .with(\.$authors)
@@ -258,9 +257,9 @@ struct BookController: RouteCollection {
                 bookAuthor.words
             }
         let updatedBookWordCount = bookAuthorWords.reduce(0, +)
-        */
 
-        // MARK: Additional Sibling Properties Using Database
+            // MARK: Additional Sibling Properties Using Database
+            /*
             guard let book = try await Book.find(bookId, on: transaction) else {
                 throw Abort(.notFound, reason: "Book with Id was not found")
             }
@@ -270,42 +269,32 @@ struct BookController: RouteCollection {
             }
 
 
-        // Check if author already exists in the pivot and update existing word count if it exists else create it
-        let isAlreadyAuthor = try await book.$authors.isAttached(to: author, on: transaction)
+            // Check if author already exists in the pivot and update existing word count if it exists else create it
+            let isAlreadyAuthor = try await book.$authors.isAttached(to: author, on: transaction)
 
-        if isAlreadyAuthor {
+            if isAlreadyAuthor {
 
-            try await BookAuthorPivot.query(on: transaction)
-                        .set(\.$words, to: totalWordContribution)
-                        .filter(\.$book.$id == bookId)
-                        .filter(\.$author.$id == authorId)
-                        .update()
-
-            /*
-            guard let bookAuthorPivot = try await BookAuthorPivot.query(on: transaction)
+                try await BookAuthorPivot.query(on: transaction)
+                    .set(\.$words, to: totalWordContribution)
                     .filter(\.$book.$id == bookId)
                     .filter(\.$author.$id == authorId)
-                    .first() else {
-                        throw Abort(.notFound)
-                    }
-            /// add additional requested quantity if it already exists instead of updating with new value
-            bookAuthorPivot.words = totalWordContribution
-            try await bookAuthorPivot.save(on: transaction)
-             */
-        } else {
-            try await book.$authors.attach(author, method: .ifNotExists, on: transaction) { pivot in
-                pivot.words = totalWordContribution
+                    .update()
             }
-        }
-
-        /// Get updated count
-        // Does not work on PostgreSQL due to result returning Double instead of Int causing a conversion error: https://github.com/vapor/fluent-kit/issues/379
-        // FIXME: Replace aggregate
-        guard let updatedBookWordCount = try await BookAuthorPivot.query(on: transaction)
-                .filter(\.$book.$id == bookId)
-                .sum(\.$words) else {
-                    throw Abort(.notFound, reason: "Unable to retrieve updated word count")
+            else {
+                try await book.$authors.attach(author, method: .ifNotExists, on: transaction) { pivot in
+                    pivot.words = totalWordContribution
                 }
+            }
+
+            /// Get updated count
+            // Does not work on PostgreSQL due to result returning Double instead of Int causing a conversion error: https://github.com/vapor/fluent-kit/issues/379
+            // FIXME: Replace aggregate
+            guard let updatedBookWordCount = try await BookAuthorPivot.query(on: transaction)
+                    .filter(\.$book.$id == bookId)
+                    .sum(\.$words) else {
+                        throw Abort(.notFound, reason: "Unable to retrieve updated word count")
+                    }
+             */
 
             /// Common code
             if let bookForm = book.form, bookForm == .shortStory {
@@ -318,10 +307,9 @@ struct BookController: RouteCollection {
         }
         return .ok
     }
-
 }
 
 struct BookWithPages: Content {
-  let title: String
-  let pages: [Page]
+    let title: String
+    let pages: [Page]
 }

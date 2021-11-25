@@ -44,12 +44,12 @@ struct CreatePageData: AsyncMigration {
         let pages: [Page] = [
             .init(number: 1, chapter: "Introduction", section: "Introduction", content: "lorem ipsum", isSample: true, bookId: try book1.requireID()),
             .init(number: 2, chapter: "Getting Started", section: "Download materials", content: "Links to download projects contains", isSample: false, bookId: try book1.requireID()),
-            .init(number: 3, chapter: "Main Body", section: "Main", content: "lorem ipsum", isSample: false, bookId: try book2.requireID()),
+            .init(number: 3, chapter: "Main Body", section: "Main", content: "lorem ipsum", isSample: false, bookId: try book1.requireID()),
             .init(number: 4, chapter: "Where to go from here", section: nil, content: "Reference Books contains", isSample: true, bookId: try book1.requireID()),
             .init(number: 1, chapter: "Introduction", section: "Introduction", content: "lorem ipsum", isSample: true, bookId: try book2.requireID()),
-            //.init(number: 2, chapter: "Getting Started", section: "Download materials", content: "Links to download projects contains", isSample: false, bookId: try book2.requireID()),
-            //.init(number: 3, chapter: "Main Body", section: "Main", content: "lorem ipsum", isSample: false, bookId: try book2.requireID()),
-            //.init(number: 4, chapter: "Where to go from here", section: nil, content: "Reference Books contains", isSample: true, bookId: try book2.requireID())
+            .init(number: 2, chapter: "Getting Started", section: "Download materials", content: "Links to download projects contains", isSample: false, bookId: try book2.requireID()),
+            .init(number: 3, chapter: "Main Body", section: "Main", content: "lorem ipsum", isSample: false, bookId: try book2.requireID()),
+            .init(number: 4, chapter: "Where to go from here", section: nil, content: "Reference Books contains", isSample: true, bookId: try book2.requireID())
         ]
 
         try await pages.create(on: database)
