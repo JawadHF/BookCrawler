@@ -280,6 +280,44 @@ struct BookController: RouteCollection {
         }
         return .ok
     }
+    
+    /*
+    // TODO: Use .join(ChildTable.self, on: \ChildTable.$parent.$id == \MyTable.$id && \ChildTable.$status != "OPEN") instead
+     static func find(skuID: SKU.IDValue, within priceListID: PriceList.IDValue, translatedTo languageCode: LanguageCode, in database: any Database) async throws -> (SKU, Price)? {
+         
+         if let price = try await Price.query(on: database)
+             .join(SKU.self, on: \Price.$sku.$id == \SKU.$id, method: .left)
+             .join(SKUTranslation.self, on: \SKUTranslation.$sku.$id == \SKU.$id && \SKUTranslation.$languageCode == languageCode, method: .left)
+             .filter(SKU.self, \.$id == skuID)
+             .filter(\.$priceList.$id == priceListID)
+             .first() {
+             
+             /// access the joined model
+             let sku = try price.joined(SKU.self)
+             
+             do {
+                 let translation = try price.joined(SKUTranslation.self)
+                 
+                 sku.name = translation.name
+                 sku.title = translation.title
+                 sku.summary = translation.summary
+                 sku.description = translation.description
+                 sku.attributes = translation.attributes
+             } catch  {
+                 /// In case translations for the SKU  aren't found/provided, the decoding will fail
+                 /// gracefully handle the error without propagating or failing processing
+                 let logger = Logger(label: "findby.sku.service")
+                 logger.info("Skipping translation for id: \(price.$sku.id)")
+                 logger.info("\(error)")
+             }
+             
+             return (sku, price)
+         }
+         else {
+             return nil
+         }
+     }
+     */
 }
 
 struct BookWithPages: Content {
