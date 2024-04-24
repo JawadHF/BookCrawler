@@ -1,0 +1,83 @@
+name: Resource Planner
+
+on:
+    push:
+        branches: [ master ]
+    pull_request:
+        branches: [ master ]
+
+jobs:
+    linux:
+        runs-on: ubuntu-latest
+        #container: swift:5.5
+        env:
+            LOG_LEVEL: debug
+        services:
+            postgres:
+                image: postgres
+                ports:
+                    - 5432:5432
+                env:
+                    POSTGRES_USER: vapor_username
+                    POSTGRES_DB: vapor_test
+                    POSTGRES_PASSWORD: vapor_password
+                options: >-
+                    --health-cmd pg_isready
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
+
+        steps:
+        - name: Checkout
+          uses: actions/checkout@v2
+
+        - name: Cache dependencies
+          uses: actions/cache@v2
+          env:
+            cache-name: cache-build-files
+          with:
+            path: /__w/ResourcePlanner/ResourcePlanner/.build
+            key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/Package.resolved') }}
+            restore-keys: |
+                ${{ runner.os }}-build-${{ env.cache-name }}-
+                ${{ runner.os }}-build-
+                ${{ runner.os }}-
+
+
+        #- name: Build
+         # run: swift build -c release
+
+        #- name: Install DB
+         # run: |
+          #  sudo apt-get update
+          #  sudo apt-get install --yes --no-install-recommends postgresql libpq-dev
+          #  sudo service postgresql start
+          #  sudo -u postgres createuser --superuser vapor_username
+          #  sudo -u postgres createdb vapor_test
+
+        #- name: Setup DB user
+        #  run: |
+        #    export PGPASSWORD='vapor_password'; psql -h localhost -d vapor_test  -U vapor_username -c 'SELECT datname FROM pg_database WHERE datistemplate = false'
+        #    export PGPASSWORD='vapor_password'; psql -h localhost -d vapor_test  -U vapor_username -c 'SELECT datname FROM pg_database WHERE datistemplate = false'
+        #   export PGPASSWORD='vapor_password'; psql -h localhost -d vapor_test  -U vapor_username -c 'SELECT datname FROM pg_database WHERE datistemplate = false'
+
+        #- name: Install psql
+         # run: |
+          #  sudo apt-get install --yes --no-install-recommends postgresql-client
+
+        #- name: Setup tmate session
+         # uses: mxschmitt/action-tmate@v3
+
+
+
+        - name: Test
+          run: swift test
+          working-directory: ./resource-planner
+          env:
+            GOOGLE_CALLBACK_URL: ${{ secrets.GOOGLE_CALLBACK_URL }}
+            DATABASE_HOST: localhost
+            DATABASE_PORT: 5432
+            DATABASE_NAME: vapor_test
+            DATABASE_USERNAME: vapor_username
+            DATABASE_PASSWORD: vapor_password
+
