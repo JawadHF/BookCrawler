@@ -22,6 +22,7 @@ struct CreateBook: AsyncMigration {
             .id()
             .field("title", .string, .required)
             .field("words", .int, .required)
+            .field("genres", .array(of: .uint8), .required)
             .field("type", bookType, .required)
             .field("form", bookForm)
             .field("price", (database is MySQLDatabase) ? .sql(raw: "DECIMAL(7,2)") : .string, .required)

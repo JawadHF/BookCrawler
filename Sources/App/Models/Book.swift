@@ -13,6 +13,9 @@ final class Book: Model, Content {
 
     @Field(key: "words")
     var words: Int
+    
+    @Field(key: "genres")
+    var genres: Genres
 
     @Enum(key: "type")
     var type: BookType
@@ -37,10 +40,19 @@ final class Book: Model, Content {
 
     init() { }
 
-    init(id: UUID? = nil, title: String, words: Int, type: BookType = .nonFiction, form: BookForm?, price: Decimal) {
+    init(
+        id: UUID? = nil,
+        title: String,
+        words: Int,
+        genres: Set<Genre>,
+        type: BookType = .nonFiction,
+        form: BookForm?,
+        price: Decimal
+    ) {
         self.id = id
         self.title = title
         self.words = words
+        self.genres = genres
         self.type = type
         self.form = form
         self.price = price
@@ -55,4 +67,19 @@ enum BookType: String, Content {
 enum BookForm: String, Content {
     case shortStory
     case novel
+}
+
+extension Book {
+    typealias Genres = Set<Genre>
+
+    enum Genre: UInt8, Codable, Comparable {
+        case drama = 0
+        case romance = 1
+        case scifi = 2
+        case education = 3
+        
+        static func < (lhs: Book.Genre, rhs: Book.Genre) -> Bool {
+            lhs.rawValue < rhs.rawValue
+        }
+    }
 }
