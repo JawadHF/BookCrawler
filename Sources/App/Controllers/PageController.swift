@@ -155,6 +155,11 @@ struct PageController: RouteCollection {
         let matchingPages = try await Page.query(on: req.db)
             .with(\.$book)
            .filter(\.$content ~~ searchTerm)    //Uses LIKE %searchTerm% . Is a case insensitive search with MySQL
+        /// Better still, use Case insensitive text (CIText) on Postgres for column type and filter using a custom filter as below
+           //.filter(.sql(embed: "\(ident: User.FieldKeys.email.description) = \(bind: email)::citext"))
+           //.filter(\.$email, .custom("ilike"), email.lowercased())
+           //.filter(.sql(embed: "\(bind: country)::citext = ANY (\(ident: Market.FieldKeys.countryCodes.description))"))
+           //.filter(.custom("\(User.FieldKeys.email) collate \"pl-PL-x-icu\""))
            .all()
 
         var titles: [String] = []
