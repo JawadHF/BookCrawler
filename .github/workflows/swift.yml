@@ -1,10 +1,10 @@
-name: Resource Planner
+name: Book Crawler
 
 on:
     push:
-        branches: [ master ]
+        branches: [ master, test ]
     pull_request:
-        branches: [ master ]
+        branches: [ master, test ]
 
 jobs:
     linux:
