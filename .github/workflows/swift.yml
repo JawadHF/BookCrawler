@@ -72,7 +72,7 @@ jobs:
 
         - name: Test
           run: swift test
-          working-directory: ./resource-planner
+          # working-directory: ./resource-planner
           env:
             GOOGLE_CALLBACK_URL: ${{ secrets.GOOGLE_CALLBACK_URL }}
             DATABASE_HOST: localhost
